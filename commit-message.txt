@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# Print a message indicating that the script has started
+echo "Script started"
+
+# Check if the JIRA_API_TOKEN environment variable is set
+if [ -z "$JIRA_API_TOKEN" ]; then
+  # If the JIRA_API_TOKEN is not set, print an error message and exit the script
+  echo "JIRA API token is not set. Please export JIRA_API_TOKEN."
+  exit 1
+fi
+
+# Read the commit message from the .git/COMMIT_EDITMSG file and store it in a variable
+commit_message=$(cat .git/COMMIT_EDITMSG)
+# Print the commit message to the console
+echo $commit_message
+
+# Extract the JIRA ticket ID from the commit message using a regular expression
+ticket_id=$(echo $commit_message | grep -oP '(SCRUM-\d+)')
+# Print the extracted ticket ID to the console
+echo $ticket_id
+
+# Check if a JIRA ticket ID was found in the commit message
+if [ -z "$ticket_id" ]; then
+  # If no ticket ID is found, print an error message and exit the script
+  echo "No JIRA ticket ID found in commit message."
+  exit 1
+fi
+
+# Define the path to the Python script that checks the JIRA ticket status
+python_script_path="/mnt/c/Users/aajazshaikh/Dev/get_jira_status.py"
+
+# Call the Python script with the ticket ID as an argument and store the result in a variable
+ticket_status=$(python3 "$python_script_path" "$ticket_id")
+# Print the ticket status to the console
+echo $ticket_status
+
+# Check if the ticket status is not "In Progress"
+if [ "$ticket_status" != "In Progress" ]; then
+  # If the ticket is not in progress, print an error message and exit the script
+  echo "JIRA ticket is not in progress state so aborting commit."
+  exit 1
+else  
+  # If the ticket is in progress, print a success message
+  echo "JIRA ticket is in progress commit added successfully"
+fi
